@@ -1,6 +1,6 @@
 import {
   Body,
-  Controller,
+  Controller, Get,
   Post,
   Req,
   Res,
@@ -87,5 +87,10 @@ export class AuthController {
     });
 
     return { success: true };
+  }
+
+  @Get('health')
+  health() {
+    return { status: 'ok' };
   }
 }
