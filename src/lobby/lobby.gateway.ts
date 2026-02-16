@@ -19,9 +19,10 @@ interface LobbyUser {
 }
 
 interface Battle {
-  boards: Map<number, BoardCell[][]>; // userId -> board
+  boards: Map<number, BoardCell[][]>;
   currentTurn: number;
   players: [number, number];
+  chat: { senderId: number; message: string; timestamp: number }[];
 }
 
 @WebSocketGateway({
@@ -32,9 +33,9 @@ export class LobbyGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   private readonly logger = new Logger(LobbyGateway.name);
-  private gameRooms = new Map<number, string>(); // userId -> gameId
-  private battles = new Map<string, Battle>(); // gameId -> battle
-  private connections = new Map<number, Set<string>>(); // userId -> socketIds
+  private gameRooms = new Map<number, string>();
+  private battles = new Map<string, Battle>();
+  private connections = new Map<number, Set<string>>();
 
   /* ===================== CONNECTION ===================== */
   handleConnection(client: Socket) {
@@ -68,6 +69,11 @@ export class LobbyGateway implements OnGatewayConnection, OnGatewayDisconnect {
       'shoot',
       ({ gameId, x, y }: { gameId: string; x: number; y: number }) =>
         this.shoot(userId, gameId, x, y),
+    );
+    client.on(
+        'battle_chat',
+        ({ gameId, message }: { gameId: string; message: string }) =>
+            this.handleBattleChat(userId, gameId, message),
     );
   }
 
@@ -122,6 +128,7 @@ export class LobbyGateway implements OnGatewayConnection, OnGatewayDisconnect {
       boards: new Map(),
       currentTurn: 0,
       players: [fromUserId, toUserId],
+      chat: [],
     });
   }
 
@@ -223,7 +230,28 @@ export class LobbyGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const payload: LobbyUser = { id: userId, status };
     this.server.emit('user_status_update', payload);
   }
+  private handleBattleChat(userId: number, gameId: string, message: string) {
+    const battle = this.battles.get(gameId);
+    if (!battle) return;
 
+    const chatMessage = {
+      senderId: userId,
+      message,
+      timestamp: Date.now(),
+    };
+
+    // Добавляем в историю
+    battle.chat.push(chatMessage);
+
+    // Отправляем всем игрокам в битве
+    battle.players.forEach((uid) => {
+      const sockets = this.connections.get(uid);
+      sockets?.forEach((sid) => {
+        const sock = this.server.sockets.sockets.get(sid);
+        sock?.emit('battle_chat', chatMessage);
+      });
+    });
+  }
   @SubscribeMessage('logout')
   handleLogout(@MessageBody() userId: number) {
     const sockets = this.connections.get(userId);
