@@ -33,7 +33,8 @@ export class AuthController {
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      sameSite: 'strict',
+      sameSite: 'none',
+      secure: true,
       path: '/auth/refresh',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -83,7 +84,8 @@ export class AuthController {
 
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      sameSite: 'strict',
+      secure: true,
+      sameSite: 'none',
       path: '/auth/refresh',
     });
 
