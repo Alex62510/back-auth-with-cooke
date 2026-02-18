@@ -79,7 +79,6 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const userId = req.user.sub;
-    console.log('REQ.USER 👉', req.user);
     await this.authService.logout(userId);
 
     res.clearCookie('refreshToken', {
