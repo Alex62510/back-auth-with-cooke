@@ -52,6 +52,7 @@ export class UserService {
     }
 
     await user.save();
+
     return {
       id: user.id,
       name: user.name,
