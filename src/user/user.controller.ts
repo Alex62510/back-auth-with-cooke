@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Param, Patch} from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { UserService, FrontUser } from './user.service';
 
 @Controller('users')
@@ -13,13 +13,5 @@ export class UserController {
   @Get(':id')
   getUser(@Param('id') id: string): Promise<FrontUser | null> {
     return this.userService.getUserById(+id);
-  }
-
-  @Patch(':id')
-  updateUser(
-      @Param('id') id: string,
-      @Body() body: { name?: string },
-  ): Promise<FrontUser | null> {
-    return this.userService.updateUser(Number(id), body);
   }
 }
